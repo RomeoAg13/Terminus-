@@ -1,28 +1,67 @@
 package main
 
 import (
-	"encoding/json"
+	"bufio"
 	"fmt"
-	"log"
 	"os"
+	"os/exec"
+	"runtime"
+	"strings"
 	"terminus_plus/core"
 )
 
-//TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
-// the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.</p>
-
 func main() {
-	SimulateCommand("Hello")
+	reader := bufio.NewReader(os.Stdin)
+	prompt := "Term -> "
+
+	for {
+		fmt.Print(prompt)
+
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Erreur de lecture :", err)
+			continue
+		}
+
+		input = strings.TrimSpace(input)
+		SimulateCommand(input)
+	}
 }
 
 func SimulateCommand(input string) core.Terminus {
+
+	var cmdExec *exec.Cmd
+
 	t := core.Terminus{
 		Input:  input,
-		Output: "World",
+		Output: "",
 	}
 
-	fmt.Printf("Input: %s\n", t.Input)
-	fmt.Printf("Output: %s\n", t.Output)
+	parts := strings.Fields(t.Input)
+
+	if len(parts) == 0 {
+		fmt.Println("No input provided.")
+		return t
+	}
+	cmd := parts[0]
+	arg := parts[1:]
+
+	exec.Command(cmd, arg...)
+
+	if runtime.GOOS == "windows" {
+		cmdExec = exec.Command("cmd", append([]string{"/C"}, parts...)...)
+	} else {
+		cmdExec = exec.Command(parts[0], parts[1:]...)
+	}
+
+	out, err := cmdExec.Output()
+	if err != nil {
+		fmt.Println("Erreur d'exécution de la commande :", err)
+	} else {
+		fmt.Println(string(out))
+	}
+
+	fmt.Println(string(out))
 
 	return t
 }
